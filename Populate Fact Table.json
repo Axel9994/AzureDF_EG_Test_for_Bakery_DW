@@ -1,0 +1,36 @@
+{
+    "name": "Populate Fact Table",
+    "properties": {
+        "activities": [
+            {
+                "name": "Create Fact Table",
+                "type": "Script",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "linkedServiceName": {
+                    "referenceName": "AzureSqlDatabase1",
+                    "type": "LinkedServiceReference"
+                },
+                "typeProperties": {
+                    "scripts": [
+                        {
+                            "type": "Query",
+                            "text": "if not exists (select * from sysobjects where name='FactSales' and xtype='U')\r\n\tcreate table FactSales(\r\n\t SalesID int identity(1,1),\r\n\t Customer_ID int,\r\n\t Product_ID int,\r\n\t PaymentMethod_ID int,\r\n\t Location_ID int,\r\n\t quantity int,\r\n\t unit_price decimal(10,2),\r\n\t discount decimal(10,2),\r\n\t total_price decimal(10,2)\r\n\t );\r\n insert into FactSales\r\n select c.Customer_ID,\r\n        p.Product_ID,\r\n\t\tpp.PaymentMethod_ID,\r\n\t\tl.Location_ID,\r\n\t\ts.quantity,\r\n\t\ts.unit_price,\r\n\t\ts.discount,\r\n\t\ts.total_price\r\nfrom dbo.stage_bakery s\r\nleft join dbo.DimCustomer c\r\non s.customer_name = c.customer_name\r\nleft join dbo.DimProduct p\r\non s.product_name = p.product_name and s.product_category = p.product_category\r\nleft join dbo.DimPaymentMethod pp\r\non s.payment_method = pp.payment_method\r\nleft join dbo.DimLocation l\r\non s.delivery_address = l.delivery_address and s.city = l.city and s.country = l.country;"
+                        }
+                    ],
+                    "scriptBlockExecutionTimeout": "02:00:00"
+                }
+            }
+        ],
+        "annotations": [],
+        "lastPublishTime": "2024-02-12T00:24:35Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}

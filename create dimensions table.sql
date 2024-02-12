@@ -21,10 +21,6 @@ if not exists (select * from sysobjects where name='DimLocation' and xtype='U')
 		city varchar(50),
 		country varchar(50)
     );
-truncate table DimCustomer;
-truncate table DimProduct;
-truncate table DimPaymentMethod;
-truncate table DimLocation;
 insert into DimCustomer
 select ROW_NUMBER() OVER (ORDER BY c.customer_name) as Customer_ID,
 	  c.customer_name

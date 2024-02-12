@@ -10,7 +10,6 @@ if not exists (select * from sysobjects where name='FactSales' and xtype='U')
 	 discount decimal(10,2),
 	 total_price decimal(10,2)
 	 );
-truncate table dbo.FactSales;
  insert into FactSales
  select c.Customer_ID,
         p.Product_ID,

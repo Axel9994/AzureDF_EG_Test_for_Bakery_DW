@@ -1,0 +1,59 @@
+{
+    "name": "Populate_Dimensions",
+    "properties": {
+        "activities": [
+            {
+                "name": "Create Dimension Tables",
+                "type": "Script",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "linkedServiceName": {
+                    "referenceName": "AzureSqlDatabase1",
+                    "type": "LinkedServiceReference"
+                },
+                "typeProperties": {
+                    "scripts": [
+                        {
+                            "type": "Query",
+                            "text": "if not exists (select * from sysobjects where name='DimCustomer' and xtype='U')\r\n    create table DimCustomer (\r\n        Customer_ID int,\r\n\t\tcustomer_name varchar(50)\r\n    );\r\nif not exists (select * from sysobjects where name='DimProduct' and xtype='U')\r\n    create table DimProduct (\r\n        Product_ID int,\r\n\t\tproduct_name varchar(50),\r\n\t\tproduct_category varchar(50)\r\n    );\r\nif not exists (select * from sysobjects where name='DimPaymentMethod' and xtype='U')\r\n    create table DimPaymentMethod (\r\n        PaymentMethod_ID int,\r\n\t\tpayment_method varchar(50)\r\n    );\r\nif not exists (select * from sysobjects where name='DimLocation' and xtype='U')\r\n    create table DimLocation (\r\n        Location_ID int,\r\n\t\tdelivery_address varchar(50),\r\n\t\tcity varchar(50),\r\n\t\tcountry varchar(50)\r\n    );\r\ninsert into DimCustomer\r\nselect ROW_NUMBER() OVER (ORDER BY c.customer_name) as Customer_ID,\r\n\t  c.customer_name\r\nfrom (\r\n select distinct customer_name\r\n from dbo.stage_bakery\r\n) c;\r\ninsert into DimProduct\r\nselect ROW_NUMBER() OVER (ORDER BY p.product_name,\r\n\t  p.product_category) as Product_ID,\r\n\t  p.product_name,\r\n\t  p.product_category\r\nfrom (\r\n select distinct product_name, product_category\r\n from dbo.stage_bakery\r\n) p;\r\ninsert into DimPaymentMethod\r\nselect ROW_NUMBER() OVER (order by pp.payment_method) as PaymentMethod_ID,\r\npp.payment_method\r\nfrom (\r\nselect distinct payment_method\r\nfrom dbo.stage_bakery\r\n) pp;\r\ninsert into DimLocation\r\nselect ROW_NUMBER() OVER (ORDER BY delivery_address, city, country) as Location_ID,\r\ndelivery_address,\r\ncity,\r\ncountry\r\nfrom\r\n(select distinct delivery_address, city, country\r\nfrom dbo.stage_bakery) l;"
+                        }
+                    ],
+                    "scriptBlockExecutionTimeout": "02:00:00"
+                }
+            },
+            {
+                "name": "Create Fact Sales",
+                "type": "ExecutePipeline",
+                "dependsOn": [
+                    {
+                        "activity": "Create Dimension Tables",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "pipeline": {
+                        "referenceName": "Populate Fact Table",
+                        "type": "PipelineReference"
+                    },
+                    "waitOnCompletion": true
+                }
+            }
+        ],
+        "annotations": [],
+        "lastPublishTime": "2024-02-12T00:24:36Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
